@@ -89,6 +89,15 @@ def get_billing_addresses(party=None):
 @frappe.whitelist()
 def place_order():
 	quotation = _get_cart_quotation()
+
+	# Validate delivery date before placing order
+	if not quotation.custom_delivery_date:
+		frappe.throw(_("Please select a Delivery Date before placing your order."))
+
+	from frappe.utils import add_days, getdate, today
+	if getdate(quotation.custom_delivery_date) < getdate(add_days(today(), 3)):
+		frappe.throw(_("Delivery date must be at least 3 days from today."))
+
 	cart_settings = frappe.get_cached_doc("Webshop Settings")
 	quotation.company = cart_settings.company
 
@@ -132,6 +141,27 @@ def place_order():
 	sales_order.flags.ignore_permissions = True
 	sales_order.insert()
 	sales_order.submit()
+
+	# Deduct delivery from active subscription if customer has one
+	party = get_party()
+	if party:
+		active_subscription = frappe.get_all(
+			"Customer Subscription",
+			filters={
+				"customer": party.name,
+				"status": "Active",
+			},
+			fields=["name", "deliveries_remaining", "deliveries_used"],
+			limit=1,
+		)
+
+		if active_subscription:
+			sub = active_subscription[0]
+			if sub.deliveries_remaining > 0:
+				frappe.db.set_value("Customer Subscription", sub.name, {
+					"deliveries_remaining": sub.deliveries_remaining - 1,
+					"deliveries_used": sub.deliveries_used + 1,
+				})
 
 	if hasattr(frappe.local, "cookie_manager"):
 		frappe.local.cookie_manager.delete_cookie("cart_count")
@@ -801,7 +831,7 @@ def apply_coupon_code(applied_code, applied_referral_sales_partner):
 
 	return quotation
 
- 
+
 @frappe.whitelist(allow_guest=True)
 def remove_coupon_code():
 	quotation = _get_cart_quotation()
@@ -818,3 +848,50 @@ def remove_coupon_code():
 	quotation.save()
 
 	return quotation
+
+
+@frappe.whitelist()
+def update_delivery_date(delivery_date):
+	from frappe.utils import add_days, getdate, today
+
+	min_date = add_days(today(), 3)
+	if getdate(delivery_date) < getdate(min_date):
+		frappe.throw(_("Delivery date must be at least 3 days from today."))
+
+	quotation = _get_cart_quotation()
+	quotation.custom_delivery_date = delivery_date
+	quotation.flags.ignore_permissions = True
+	quotation.save()
+
+	return quotation.custom_delivery_date
+
+
+@frappe.whitelist()
+def get_subscription_plans():
+	"""Return all subscription plans to display on the cart page"""
+	plans = frappe.get_all(
+		"Subscription Plan",
+		fields=["name", "cost", "billing_interval", "billing_interval_count", "number_of_deliveries"],
+		order_by="cost asc",
+	)
+	return plans
+
+
+@frappe.whitelist()
+def get_customer_subscription():
+	"""Return the current customer's active subscription if any"""
+	party = get_party()
+	if not party:
+		return None
+
+	subscription = frappe.get_all(
+		"Customer Subscription",
+		filters={
+			"customer": party.name,
+			"status": "Active",
+		},
+		fields=["name", "subscription_plan", "deliveries_remaining", "deliveries_used", "end_date"],
+		limit=1,
+	)
+
+	return subscription[0] if subscription else None
