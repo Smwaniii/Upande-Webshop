@@ -1,0 +1,10 @@
+[
+  {
+    "doctype": "Client Script",
+    "name": "Set Deliveries on Plan Select",
+    "dt": "Customer Subscription",
+    "apply_to": "Form",
+    "enabled": 1,
+    "script": "frappe.ui.form.on('Customer Subscription', {\n    subscription_plan: function(frm) {\n        if (frm.doc.subscription_plan) {\n            frappe.db.get_value('Subscription Plan', frm.doc.subscription_plan, 'number_of_deliveries', function(value) {\n                frm.set_value('deliveries_included', value.number_of_deliveries);\n                frm.set_value('deliveries_remaining', value.number_of_deliveries);\n                frm.set_value('deliveries_used', 0);\n            });\n        }\n    }\n});"
+  }
+]

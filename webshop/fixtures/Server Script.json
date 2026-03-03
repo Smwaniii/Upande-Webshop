@@ -1,0 +1,11 @@
+[
+  {
+    "doctype": "Server Script",
+    "name": "Set Deliveries on New Subscription",
+    "script_type": "DocType Event",
+    "reference_doctype": "Customer Subscription",
+    "doctype_event": "Before Save",
+    "enabled": 1,
+    "script": "if doc.is_new():\n    if doc.subscription_plan:\n        plan = frappe.get_doc(\"Subscription Plan\", doc.subscription_plan)\n        doc.deliveries_remaining = plan.number_of_deliveries\n        doc.deliveries_included = plan.number_of_deliveries"
+  }
+]
