@@ -20,7 +20,8 @@ from erpnext.selling.doctype.quotation.quotation import _make_sales_order
 class WebsitePriceListMissingError(frappe.ValidationError):
     pass
 
-
+def get_context(context):
+	context.update(get_cart_quotation())
 def set_cart_count(quotation=None):
 	if cint(frappe.db.get_singles_value("Webshop Settings", "enabled")):
 		if not quotation:
