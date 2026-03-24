@@ -871,7 +871,7 @@ def get_subscription_plans():
 	"""Return all subscription plans to display on the cart page"""
 	plans = frappe.get_all(
 		"Subscription Plan",
-		fields=["name", "cost", "billing_interval", "billing_interval_count", "number_of_deliveries"],
+		fields=["name", "cost", "billing_interval", "billing_interval_count", "custom_number_of_deliveries"],
 		order_by="cost asc",
 	)
 	return plans
