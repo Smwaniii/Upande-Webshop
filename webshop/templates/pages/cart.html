@@ -332,11 +332,11 @@ function loadSubscriptionPlans() {
 
 				html += `
 					<div class="frappe-card p-3 mb-2" style="cursor:pointer; border:1px solid #d1d5db;"
-						onclick="openSubscriptionModal('${plan.name}', ${plan.cost}, ${plan.number_of_deliveries || 0}, '${interval}')">
+						onclick="openSubscriptionModal('${plan.name}', ${plan.cost}, ${plan.custom_number_of_deliveries || 0}, '${interval}')">
 						<div class="d-flex justify-content-between align-items-center">
 							<div>
 								<strong>${plan.name}</strong>
-								<div class="text-muted" style="font-size:12px;">${plan.number_of_deliveries || 0} deliveries / ${interval}</div>
+								<div class="text-muted" style="font-size:12px;">${plan.custom_number_of_deliveries || 0} deliveries / ${interval}</div>
 							</div>
 							<div class="text-right">
 								<strong>KES ${plan.cost}</strong>
